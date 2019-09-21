@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Bebbs.Monads;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mqtt;
@@ -15,16 +16,27 @@ namespace PowerFull.Messaging.Facade
         private readonly Config _config;
         private readonly IMqttClient _mqttClient;
         private readonly IReadOnlyDictionary<string, IDevice> _devices;
+        private readonly IObservable<double> _realPower;
 
         public Implementation(Config config, IMqttClient mqttClient, IEnumerable<IDevice> devices)
         {
             _config = config;
             _mqttClient = mqttClient;
             _devices = devices.ToDictionary(kvp => kvp.Id);
+
+            _realPower = _mqttClient.MessageStream
+                .Where(message => message.Topic.Equals(config.PowerReadingTopic, StringComparison.OrdinalIgnoreCase))
+                .Select(message => Encoding.UTF8.GetString(message.Payload))
+                .Select(payload => Regex.Match(payload, config.PowerReadingPayloadValueRegex))
+                .Where(match => match.Success)
+                .Select(match => double.TryParse(match.Value, out double value) ? (double?)value : null)
+                .Where(value => value != null)
+                .Select(nullable => nullable.Value);
         }
 
         public async ValueTask DisposeAsync()
         {
+            await _mqttClient.UnsubscribeAsync(_config.PowerReadingTopic);
             await _mqttClient.UnsubscribeAsync(_devices.Values.Select(d => d.PowerStateResponseTopic).ToArray());
             await _mqttClient.DisconnectAsync();
 
@@ -71,5 +83,7 @@ namespace PowerFull.Messaging.Facade
 
             return state;
         }
+
+        public IObservable<double> RealPower => _realPower;
     }
 }

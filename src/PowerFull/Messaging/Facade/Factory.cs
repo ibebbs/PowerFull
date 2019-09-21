@@ -45,6 +45,8 @@ namespace PowerFull.Messaging.Facade
                 await client.SubscribeAsync(topic, MqttQualityOfService.AtLeastOnce);
             }
 
+            await client.SubscribeAsync(_config.Value.PowerReadingTopic, MqttQualityOfService.AtLeastOnce);
+
             return client;
         }
 

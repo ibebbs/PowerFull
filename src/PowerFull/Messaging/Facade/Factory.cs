@@ -1,60 +1,33 @@
 ﻿using Microsoft.Extensions.Options;
-using System;
+using PowerFull.Messaging.Mqtt;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mqtt;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PowerFull.Messaging.Facade
 {
     public interface IFactory
     {
-        Task<IFacade> ForDevices(IEnumerable<IDevice> devices);
+        ValueTask<IFacade> ForDevices(IEnumerable<IDevice> devices);
     }
 
     public class Factory : IFactory
     {
         private readonly IOptions<Config> _config;
+        private readonly Mqtt.IFactory _mqttFactory;
 
-        public Factory(IOptions<Config> config)
+        public Factory(IOptions<Config> config, Mqtt.IFactory mqttFactory)
         {
             _config = config;
+            _mqttFactory = mqttFactory;
         }
 
-        private async Task<IMqttClient> CreateMqttClient(IEnumerable<string> topics)
+        public async ValueTask<IFacade> ForDevices(IEnumerable<IDevice> devices)
         {
-            var config = new MqttConfiguration
-            {
-                Port = _config.Value.Port,
-                MaximumQualityOfService = MqttQualityOfService.ExactlyOnce,
-                AllowWildcardsInTopicFilters = true
-            };
+            var implementation = new Implementation(_config.Value, _mqttFactory, devices);
 
-            var credentials = new MqttClientCredentials(
-                _config.Value.ClientId,
-                _config.Value.Username,
-                _config.Value.Password
-            );
+            await implementation.InitializeAsync();
 
-            var client = await MqttClient.CreateAsync(_config.Value.Broker, config);
-            var session = await client.ConnectAsync(credentials, cleanSession: true);
-
-            foreach (string topic in topics)
-            {
-                await client.SubscribeAsync(topic, MqttQualityOfService.AtLeastOnce);
-            }
-
-            await client.SubscribeAsync(_config.Value.PowerReadingTopic, MqttQualityOfService.AtLeastOnce);
-
-            return client;
-        }
-
-        public async Task<IFacade> ForDevices(IEnumerable<IDevice> devices)
-        {
-            var client = await CreateMqttClient(devices.Select(d => d.PowerStateResponseTopic));
-
-            return new Implementation(_config.Value, client, devices);
+            return implementation;
         }
     }
 }

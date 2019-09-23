@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public interface IFactory
     {
-        IState Starting(IPayload payload);
+        IState Starting(IEnumerable<string> devices);
         IState Initializing(IPayload payload);
         IState Running(IPayload payload);
         IState Faulted(Exception exception);
@@ -14,17 +15,19 @@ namespace PowerFull.State
     public class Factory : IFactory
     {
         private readonly Messaging.IFacade _messagingFacade;
+        private readonly Device.IFactory _deviceFactory;
         private readonly Transition.IFactory _transitionFactory;
 
-        public Factory(Messaging.IFacade messagingFacade, Transition.IFactory transitionFactory)
+        public Factory(Messaging.IFacade messagingFacade, Device.IFactory deviceFactory, Transition.IFactory transitionFactory)
         {
             _messagingFacade = messagingFacade;
+            _deviceFactory = deviceFactory;
             _transitionFactory = transitionFactory;
         }
 
-        public IState Starting(IPayload payload)
+        public IState Starting(IEnumerable<string> devices)
         {
-            return new Starting(_transitionFactory, payload);
+            return new Starting(_transitionFactory, _deviceFactory, devices);
         }
 
         public IState Initializing(IPayload payload)

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reactive.Linq;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     internal class Faulted : IState
     {

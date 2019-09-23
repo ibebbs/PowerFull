@@ -1,4 +1,4 @@
-﻿namespace PowerFull.State.Transition
+﻿namespace PowerFull.Service.State.Transition
 {
     public class ToRunning : ITransition
     {

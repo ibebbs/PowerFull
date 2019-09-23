@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public interface ITransition
     {

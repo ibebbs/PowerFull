@@ -14,7 +14,7 @@ namespace PowerFull.Tests.Device
     public class FactoryShould
     {
         [Test]
-        public async Task CorrectlyBuildADeviceFromATheme()
+        public void CorrectlyBuildADeviceFromATheme()
         {
             var config = new Device.Config
             {
@@ -24,7 +24,7 @@ namespace PowerFull.Tests.Device
             var options = A.Fake<IOptions<Device.Config>>();
             A.CallTo(() => options.Value).Returns(config);
 
-            var device = await new Device.Factory(options).CreateDevice("test");
+            var device = new Device.Factory(options).CreateDevice("test");
 
             Assert.That(device.Id, Is.EqualTo("test"));
 
@@ -40,7 +40,7 @@ namespace PowerFull.Tests.Device
         }
 
         [Test]
-        public async Task CorrectlyBuildADeviceFromConfig()
+        public void CorrectlyBuildADeviceFromConfig()
         {
             var config = new Device.Config
             {
@@ -58,7 +58,7 @@ namespace PowerFull.Tests.Device
             var options = A.Fake<IOptions<Device.Config>>();
             A.CallTo(() => options.Value).Returns(config);
 
-            var device = await new Device.Factory(options).CreateDevice("test");
+            var device = new Device.Factory(options).CreateDevice("test");
 
             Assert.That(device.Id, Is.EqualTo("test"));
 
@@ -73,7 +73,7 @@ namespace PowerFull.Tests.Device
             Assert.That(device.PowerOffRequestPayload, Is.EqualTo("OFF"));
         }
         [Test]
-        public async Task CorrectlyBuildADeviceFromConfigAndTheme()
+        public void CorrectlyBuildADeviceFromConfigAndTheme()
         {
             var config = new Device.Config
             {
@@ -84,7 +84,7 @@ namespace PowerFull.Tests.Device
             var options = A.Fake<IOptions<Device.Config>>();
             A.CallTo(() => options.Value).Returns(config);
 
-            var device = await new Device.Factory(options).CreateDevice("test");
+            var device = new Device.Factory(options).CreateDevice("test");
 
             Assert.That(device.Id, Is.EqualTo("test"));
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public interface IState
     {

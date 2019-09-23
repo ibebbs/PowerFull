@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PowerFull.State.Transition
+namespace PowerFull.Service.State.Transition
 {
     public interface IFactory
     {

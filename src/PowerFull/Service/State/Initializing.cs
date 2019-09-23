@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public class Initializing : IState
     {

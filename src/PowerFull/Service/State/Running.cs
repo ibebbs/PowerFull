@@ -7,7 +7,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public class Running : IState
     {

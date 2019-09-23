@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public class Logic
     {

@@ -7,7 +7,12 @@ using System.Threading.Tasks;
 
 namespace PowerFull.Device
 {
-    public class Factory
+    public interface IFactory
+    {
+        IDevice CreateDevice(string name);
+    }
+
+    public class Factory : IFactory
     {
         private static readonly IEnumerable<(Func<Config, string>, Func<ITheme, string>, Action<Implementation, string>)> Functors = new (Func<Config, string>, Func<ITheme, string>, Action<Implementation, string>)[]
         {
@@ -47,13 +52,13 @@ namespace PowerFull.Device
                 .Coalesce(() => new Func<Implementation, Implementation>(implementation => implementation));
         }
 
-        public Task<IDevice> CreateDevice(string name)
+        public IDevice CreateDevice(string name)
         {
             var device = Functors
                 .Select(tuple => Modifier(tuple.Item1, tuple.Item2, tuple.Item3))
                 .Aggregate(new Implementation { Id = name }, (device, modifier) => modifier(device));
 
-            return Task.FromResult<IDevice>(device);
+            return device;
         }
     }
 }

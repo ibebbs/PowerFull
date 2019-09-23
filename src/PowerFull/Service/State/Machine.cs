@@ -4,11 +4,15 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
-    public class Machine
+    public interface IMachine
+    {
+        IDisposable Initialize(IEnumerable<string> devices);
+    }
+
+    public class Machine : IMachine
     {
         private readonly IFactory _factory;
         private readonly Subject<IState> _state;
@@ -19,12 +23,10 @@ namespace PowerFull.State
             _state = new Subject<IState>();
         }
 
-        public IDisposable Initialize(IEnumerable<IDevice> devices)
+        public IDisposable Initialize(IEnumerable<string> devices)
         {
-            var payload = new Payload(devices.Select(device => (device, PowerState.Unknown)));
-
             IObservable<ITransition> transitions = _state
-                .StartWith(_factory.Starting(payload))
+                .StartWith(_factory.Starting(devices))
                 .Select(state => state.Enter())
                 .Switch()
                 .Publish()

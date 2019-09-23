@@ -107,7 +107,7 @@ namespace PowerFull.Tests
             var averages = scheduler.CreateHotObservable(powerReadings.ToArray());
             
             var observer = scheduler.Start(
-                () => State.Logic.GenerateEvents(averages, devices, scheduler),
+                () => Service.State.Logic.GenerateEvents(averages, devices, scheduler),
                 runForDuration
             );
 

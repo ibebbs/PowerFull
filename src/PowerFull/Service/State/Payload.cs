@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace PowerFull.State
+namespace PowerFull.Service.State
 {
     public interface IPayload
     {

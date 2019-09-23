@@ -68,7 +68,9 @@ namespace PowerFull.Messaging.Facade
         {
             var messages = _mqttClient.MessageStream
                 .Where(message => message.Topic.Equals(device.PowerStateResponseTopic))
-                .Select(message => Encoding.UTF8.GetString(message.Payload));
+                .Select(message => Encoding.UTF8.GetString(message.Payload))
+                .Publish()
+                .RefCount();
 
             var onState = messages
                 .Where(payload => Regex.IsMatch(payload, device.PowerStateResponseOnPayloadRegex))
@@ -85,7 +87,7 @@ namespace PowerFull.Messaging.Facade
                 .Where(notification => notification.Exception != null)
                 .Select(notification => State.Unknown);
 
-            return Observable.Merge(onState, offState, unknownState).ToTask();
+            return Observable.Merge(onState, offState, unknownState).Take(1).ToTask();
         }
 
         public async ValueTask InitializeAsync()

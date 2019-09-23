@@ -32,6 +32,21 @@ namespace PowerFull.Tests.Messaging.Facade
             PowerOffRequestTopic = "PowerOffRequestTopicB"
         };
 
+        private static async Task<(Subject<MqttApplicationMessage>, IMqttClient, PowerFull.Messaging.Facade.Implementation)> CreateSubject(PowerFull.Messaging.Config config = null, IEnumerable<IDevice> devices = null)
+        {
+            config = config ?? new PowerFull.Messaging.Config();
+            var messages = new Subject<MqttApplicationMessage>();
+            var mqttClient = A.Fake<IMqttClient>();
+            A.CallTo(() => mqttClient.MessageStream).Returns(messages);
+            var mqttFactory = A.Fake<PowerFull.Messaging.Mqtt.IFactory>();
+            A.CallTo(() => mqttFactory.Create()).Returns(new ValueTask<IMqttClient>(mqttClient));
+
+            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, devices);
+            await subject.InitializeAsync();
+
+            return (messages, mqttClient, subject);
+        }
+
         [Test]
         public async Task SubscribeToExpectedTopics()
         {
@@ -40,12 +55,7 @@ namespace PowerFull.Tests.Messaging.Facade
                 PowerReadingTopic = "TestPowerReadingTopic"
             };
 
-            var mqttClient = A.Fake<IMqttClient>();
-            var mqttFactory = A.Fake<PowerFull.Messaging.Mqtt.IFactory>();
-            A.CallTo(() => mqttFactory.Create()).Returns(new ValueTask<IMqttClient>(mqttClient));
-
-            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, new[] { DeviceA, DeviceB });
-            await subject.InitializeAsync();
+            (var messages, var mqttClient, var subject) = await CreateSubject(config: config, devices: new[] { DeviceA, DeviceB });
 
             A.CallTo(() => mqttClient.SubscribeAsync("PowerStateRequestTopicA", MqttQualityOfService.AtLeastOnce)).MustHaveHappenedOnceExactly();
             A.CallTo(() => mqttClient.SubscribeAsync("PowerStateResponseTopicA", MqttQualityOfService.AtLeastOnce)).MustHaveHappenedOnceExactly();
@@ -61,17 +71,9 @@ namespace PowerFull.Tests.Messaging.Facade
         [Test]
         public async Task PublishAMessageOnThePowerStateRequestTopicWhenPowerStateRequested()
         {
-            var config = new PowerFull.Messaging.Config();
-            var messages = new Subject<MqttApplicationMessage>();
-            var mqttClient = A.Fake<IMqttClient>();
-            A.CallTo(() => mqttClient.MessageStream).Returns(messages);
-            var mqttFactory = A.Fake<PowerFull.Messaging.Mqtt.IFactory>();
-            A.CallTo(() => mqttFactory.Create()).Returns(new ValueTask<IMqttClient>(mqttClient));
+            (var messages, var mqttClient, var subject) = await CreateSubject(devices: new[] { DeviceA, DeviceB });
 
-            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, new[] { DeviceA, DeviceB });
-            await subject.InitializeAsync();
-
-            subject.GetPowerState(DeviceA);
+            _ = subject.GetPowerState(DeviceA);
 
             A.CallTo(
                 () => mqttClient.PublishAsync(
@@ -81,20 +83,14 @@ namespace PowerFull.Tests.Messaging.Facade
              .MustHaveHappenedOnceExactly();
         }
 
+
         [Test]
         public async Task PublishThePowerStateRequestPayloadMessageWhenPowerStateRequested()
         {
-            var config = new PowerFull.Messaging.Config();
-            var messages = new Subject<MqttApplicationMessage>();
-            var mqttClient = A.Fake<IMqttClient>();
-            A.CallTo(() => mqttClient.MessageStream).Returns(messages);
-            var mqttFactory = A.Fake<PowerFull.Messaging.Mqtt.IFactory>();
-            A.CallTo(() => mqttFactory.Create()).Returns(new ValueTask<IMqttClient>(mqttClient));
-
-            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, new[] { DeviceA, DeviceB });
+            (var messages, var mqttClient, var subject) = await CreateSubject(devices: new[] { DeviceA, DeviceB });
             await subject.InitializeAsync();
 
-            subject.GetPowerState(DeviceA);
+            _ = subject.GetPowerState(DeviceA);
 
             A.CallTo(
                 () => mqttClient.PublishAsync(
@@ -102,6 +98,64 @@ namespace PowerFull.Tests.Messaging.Facade
                     A<MqttQualityOfService>.Ignored,
                     false))
              .MustHaveHappenedOnceExactly();
+        }
+
+        private static IEnumerable<TestCaseData> PowerStates
+        {
+            get
+            {
+                yield return new TestCaseData("ON", "OFF", "ON")
+                    .Returns(State.On)
+                    .SetName("Return On For Simple Regex Match");
+
+                yield return new TestCaseData("ON", "OFF", "OFF")
+                    .Returns(State.Off)
+                    .SetName("Return Off For Simple Regex Match");
+
+                yield return new TestCaseData("ON", "OFF", "{ \"POWER\":\"ON\" }")
+                    .Returns(State.On)
+                    .SetName("Return On For Simple Json Regex Match");
+
+                yield return new TestCaseData("ON", "OFF", "{ \"POWER\":\"OFF\" }")
+                    .Returns(State.Off)
+                    .SetName("Return Off For Simple Json Regex Match");
+
+                yield return new TestCaseData("^\\{\"POWER\":\"ON\"\\}$", "^\\{\"POWER\":\"OFF\"\\}$", "{\"POWER\":\"ON\"}")
+                    .Returns(State.On)
+                    .SetName("Return On For Advanced Json Regex Match");
+
+                yield return new TestCaseData("^\\{\"POWER\":\"ON\"\\}$", "^\\{\"POWER\":\"OFF\"\\}$", "{\"POWER\":\"OFF\"}")
+                    .Returns(State.Off)
+                    .SetName("Return Off For Advanced Json Regex Match");
+
+            }
+        }
+
+        [Test, TestCaseSource(nameof(PowerStates))]
+        public async Task<State> ReturnThePowerStateWhenAResponseIsReceived(
+            string powerOnPayloadRegex, 
+            string powerOffPayloadRegex, 
+            string payload)
+        {
+            const string topic = "powerStateResponse";
+
+            var device = new PowerFull.Device.Implementation
+            {
+                Id = "device",
+                PowerStateResponseTopic = topic,
+                PowerStateResponseOnPayloadRegex = powerOnPayloadRegex,
+                PowerStateResponseOffPayloadRegex = powerOffPayloadRegex
+            };
+
+            (var messages, var mqttClient, var subject) = await CreateSubject(devices: new[] { device });
+
+            var powerState = subject.GetPowerState(device);
+
+            messages.OnNext(new MqttApplicationMessage(topic, Encoding.UTF8.GetBytes(payload)));
+
+            var actual = await powerState;
+
+            return actual;
         }
     }
 }

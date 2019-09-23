@@ -8,8 +8,8 @@ namespace PowerFull.Service.State
 {
     public class Logic
     {
-        private const double TurnOffLimit = -100;
-        private const double TurnOnLimit = 300;
+        private const double TurnOffThreshold = -100;
+        private const double TurnOnThreshold = 300;
 
         public static IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<(IDevice, PowerState)> devices, IScheduler scheduler)
         {
@@ -26,13 +26,13 @@ namespace PowerFull.Service.State
                         .RefCount();
 
                     var powerOff = windowAverage
-                        .Where(average => average < TurnOffLimit && pendingOff.Any())
+                        .Where(average => average < TurnOffThreshold && pendingOff.Any())
                         .Select(average => pendingOff.Pop())
                         .Do(pendingOn.Push)
                         .Select(device => (Event.TurnOff, device));
 
                     var powerOn = windowAverage
-                        .Where(average => average > TurnOnLimit && pendingOn.Any())
+                        .Where(average => average > TurnOnThreshold && pendingOn.Any())
                         .Select(average => pendingOn.Pop())
                         .Do(pendingOff.Push)
                         .Select(device => (Event.TurnOn, device));

@@ -1,4 +1,5 @@
 ﻿using Bebbs.Monads;
+using Microsoft.Extensions.Logging;
 using PowerFull.Messaging.Mqtt;
 using System;
 using System.Collections.Generic;
@@ -18,16 +19,18 @@ namespace PowerFull.Messaging.Facade
         private readonly Config _config;
         private readonly Mqtt.IFactory _mqttFactory;
         private readonly IReadOnlyDictionary<string, IDevice> _devices;
+        private readonly ILogger<IFacade> _logger;
         private readonly Subject<double> _realPower;
 
         private IMqttClient _mqttClient;
         private IDisposable _subscription;
 
-        public Implementation(Config config, Mqtt.IFactory mqttFactory, IEnumerable<IDevice> devices)
+        public Implementation(Config config, Mqtt.IFactory mqttFactory, IEnumerable<IDevice> devices, ILogger<IFacade> logger)
         {
             _config = config;
             _mqttFactory = mqttFactory;
             _devices = devices.ToDictionary(kvp => kvp.Id);
+            _logger = logger;
 
             _realPower = new Subject<double>();
         }
@@ -96,15 +99,19 @@ namespace PowerFull.Messaging.Facade
 
             _subscription = _mqttClient.MessageStream
                 .Where(message => message.Topic.Equals(_config.PowerReadingTopic, StringComparison.OrdinalIgnoreCase))
+                .Do(message => _logger.LogInformation($"Received power reading on topic '{_config.PowerReadingTopic}'"))
                 .Where(message => message.Payload?.Length > 0)
                 .Select(message => Encoding.UTF8.GetString(message.Payload))
                 .Select(payload => Regex.Match(payload, _config.PowerReadingPayloadValueRegex))
+                .Do(match => _logger.LogInformation($"{(match.Success ? "Successfully extracted" : "Failed to extract")} power value from message"))
                 .Where(match => match.Success)
                 .SelectMany(match => match.Groups.Cast<Group>())
                 .Where(group => group.Name.Equals(Constants.RealPowerRegexGroupName, StringComparison.OrdinalIgnoreCase))
                 .Select(group => double.TryParse(group.Value, out double value) ? (double?)value : null)
+                .Do(value => _logger.LogInformation($"{(value != null ? "Successfully parsed" : "Failed to parse")} number value from message"))
                 .Where(value => value != null)
                 .Select(nullable => nullable.Value)
+                .Do(value => _logger.LogInformation($"Received power reading of '{value}'"))
                 .Subscribe(_realPower);
         }
 
@@ -129,6 +136,8 @@ namespace PowerFull.Messaging.Facade
 
         public async Task<PowerState> GetPowerState(IDevice device)
         {
+            _logger.LogInformation($"Requesting power state for '{device.Id}' by publishing '{device.PowerStateRequestPayload ?? string.Empty}' to the topic '{device.PowerStateRequestTopic}'");
+
             var response = PowerStateRespose(device);
 
             var payload = string.IsNullOrWhiteSpace(device.PowerStateRequestPayload)
@@ -141,13 +150,19 @@ namespace PowerFull.Messaging.Facade
                     MqttQualityOfService.AtLeastOnce)
                 .ConfigureAwait(false);
 
+            _logger.LogInformation($"Waiting for response from '{device.Id}' on the topic '{device.PowerStateResponseTopic}'");
+
             var state = await response.ConfigureAwait(false);
+
+            _logger.LogInformation($"Received a power state of '{state}' for '{device.Id}'");
 
             return state;
         }
 
         public async Task PowerOnAsync(IDevice device)
         {
+            _logger.LogInformation($"Requesting power on for '{device.Id}' by publishing '{device.PowerOnRequestPayload ?? string.Empty}' to the topic '{device.PowerOnRequestTopic}'");
+
             var payload = string.IsNullOrWhiteSpace(device.PowerOnRequestPayload)
                 ? null
                 : Encoding.UTF8.GetBytes(device.PowerOnRequestPayload);
@@ -161,13 +176,15 @@ namespace PowerFull.Messaging.Facade
 
         public async Task PowerOffAsync(IDevice device)
         {
+            _logger.LogInformation($"Requesting power off for '{device.Id}' by publishing '{device.PowerOffRequestPayload ?? string.Empty}' to the topic '{device.PowerOffRequestTopic}'");
+
             var payload = string.IsNullOrWhiteSpace(device.PowerOffRequestPayload)
                 ? null
                 : Encoding.UTF8.GetBytes(device.PowerOffRequestPayload);
 
             await _mqttClient
                 .PublishAsync(
-                    new MqttApplicationMessage(device.PowerOnRequestTopic, payload),
+                    new MqttApplicationMessage(device.PowerOffRequestTopic, payload),
                     MqttQualityOfService.AtLeastOnce)
                 .ConfigureAwait(false);
         }

@@ -5,9 +5,9 @@
       "environmentVariables": {
         "PowerFull:Mqtt:Broker": "192.168.1.24",
         "PowerFull:Service:Devices": "sonoff-battery,",
-        "PowerFull:Mqtt:PowerReadingPayloadValueRegex": "\\d+(\\.\\d+)?",
+        "PowerFull:Mqtt:PowerReadingPayloadValueRegex": "^{.+\"RealPower\":{\"Total\":(?<RealPower>-?\\d+(\\.\\d+)).+}$",
         "PowerFull:Device:Theme": "Tasmota",
-        "PowerFull:Mqtt:PowerReadingTopic": "/home/realPower"
+        "PowerFull:Mqtt:PowerReadingTopic": "home/solar/meter1readings"
       }
     }
   }

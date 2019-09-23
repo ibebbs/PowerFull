@@ -1,4 +1,5 @@
 ﻿using FakeItEasy;
+using Microsoft.Extensions.Logging;
 using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using System;
@@ -43,8 +44,9 @@ namespace PowerFull.Tests.Messaging.Facade
             A.CallTo(() => mqttClient.MessageStream).Returns(messages);
             var mqttFactory = A.Fake<PowerFull.Messaging.Mqtt.IFactory>();
             A.CallTo(() => mqttFactory.Create()).Returns(new ValueTask<IMqttClient>(mqttClient));
+            var logger = A.Fake<ILogger<PowerFull.Messaging.IFacade>>();
 
-            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, devices);
+            var subject = new PowerFull.Messaging.Facade.Implementation(config, mqttFactory, devices, logger);
             await subject.InitializeAsync();
 
             return (messages, mqttClient, subject);

@@ -8,41 +8,41 @@ namespace PowerFull.Service.State
         IState Starting(IEnumerable<string> devices);
         IState Initializing(IPayload payload);
         IState Running(IPayload payload);
-        IState Faulted(Exception exception);
+        IState Faulted(IPayload payload, Exception exception);
         IState Stopped();
     }
 
     public class Factory : IFactory
     {
-        private readonly Messaging.IFacade _messagingFacade;
         private readonly Device.IFactory _deviceFactory;
+        private readonly Messaging.Facade.IFactory _messagingFacadeFactory;
         private readonly Transition.IFactory _transitionFactory;
 
-        public Factory(Messaging.IFacade messagingFacade, Device.IFactory deviceFactory, Transition.IFactory transitionFactory)
+        public Factory(Device.IFactory deviceFactory, Transition.IFactory transitionFactory, Messaging.Facade.IFactory messagingFacadeFactory)
         {
-            _messagingFacade = messagingFacade;
             _deviceFactory = deviceFactory;
+            _messagingFacadeFactory = messagingFacadeFactory;
             _transitionFactory = transitionFactory;
         }
 
         public IState Starting(IEnumerable<string> devices)
         {
-            return new Starting(_transitionFactory, _deviceFactory, devices);
+            return new Starting(_transitionFactory, _deviceFactory, _messagingFacadeFactory, devices);
         }
 
         public IState Initializing(IPayload payload)
         {
-            return new Initializing(_messagingFacade, _transitionFactory, payload);
+            return new Initializing(_transitionFactory, payload);
         }
 
         public IState Running(IPayload payload)
         {
-            return new Running(_messagingFacade, _transitionFactory, payload);
+            return new Running(_transitionFactory, payload);
         }
 
-        public IState Faulted(Exception exception)
+        public IState Faulted(IPayload payload, Exception exception)
         {
-            return new Faulted(_transitionFactory, exception);
+            return new Faulted(_transitionFactory, payload, exception);
         }
 
         public IState Stopped()

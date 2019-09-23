@@ -10,7 +10,7 @@ namespace PowerFull.Service.State.Transition
 
         ITransition ToRunning(IPayload payload);
 
-        ITransition ToFaulted(Exception exception);
+        ITransition ToFaulted(IPayload payload, Exception exception);
 
         ITransition ToStopped();
     }
@@ -27,9 +27,9 @@ namespace PowerFull.Service.State.Transition
             return new ToRunning(payload);
         }
 
-        public ITransition ToFaulted(Exception exception)
+        public ITransition ToFaulted(IPayload payload, Exception exception)
         {
-            return new ToFaulted(exception);
+            return new ToFaulted(payload, exception);
         }
 
         public ITransition ToStopped()

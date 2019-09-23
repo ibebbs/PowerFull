@@ -11,13 +11,11 @@ namespace PowerFull.Service.State
 {
     public class Running : IState
     {
-        private readonly Messaging.IFacade _messagingFacade;
         private readonly Transition.IFactory _transitionFactory;
         private readonly IPayload _payload;
 
-        public Running(Messaging.IFacade messagingFacade, Transition.IFactory transitionFactory, IPayload payload)
+        public Running(Transition.IFactory transitionFactory, IPayload payload)
         {
-            _messagingFacade = messagingFacade;
             _transitionFactory = transitionFactory;
             _payload = payload;
         }
@@ -27,9 +25,9 @@ namespace PowerFull.Service.State
             switch (tuple.Event)
             {
                 case Event.TurnOn:
-                    return Observable.StartAsync(() => _messagingFacade.PowerOnAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
+                    return Observable.StartAsync(() => _payload.MessagingFacade.PowerOnAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
                 case Event.TurnOff:
-                    return Observable.StartAsync(() => _messagingFacade.PowerOffAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
+                    return Observable.StartAsync(() => _payload.MessagingFacade.PowerOffAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
                 default:
                     return Observable.Empty<(IDevice, PowerState)>();
             }
@@ -41,7 +39,7 @@ namespace PowerFull.Service.State
                 .Where(t => t.Item1 != tuple.Device)
                 .Concat(new[] { tuple });
 
-            return new Payload(devices);
+            return new Payload(_payload.MessagingFacade, devices);
         }
 
         private ITransition Transition(IPayload payload)
@@ -52,12 +50,12 @@ namespace PowerFull.Service.State
         public IObservable<ITransition> Enter()
         {
             return Logic
-                .GenerateEvents(_messagingFacade.RealPower, _payload.Devices, Scheduler.Default)
+                .GenerateEvents(_payload.MessagingFacade.RealPower, _payload.Devices, Scheduler.Default)
                 .Select(PerformEvent)
                 .Switch()
                 .Select(Payload)
                 .Select(Transition)
-                .Catch<ITransition, Exception>(exception => Observable.Return(_transitionFactory.ToFaulted(exception)));
+                .Catch<ITransition, Exception>(exception => Observable.Return(_transitionFactory.ToFaulted(_payload, exception)));
         }
     }
 }

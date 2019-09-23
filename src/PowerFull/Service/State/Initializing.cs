@@ -7,13 +7,11 @@ namespace PowerFull.Service.State
 {
     public class Initializing : IState
     {
-        private readonly Messaging.IFacade _messagingFacade;
         private readonly Transition.IFactory _transitionFactory;
         private readonly IPayload _payload;
 
-        public Initializing(Messaging.IFacade messagingFacade, Transition.IFactory transitionFactory, IPayload payload)
+        public Initializing(Transition.IFactory transitionFactory, IPayload payload)
         {
-            _messagingFacade = messagingFacade;
             _transitionFactory = transitionFactory;
             _payload = payload;
         }
@@ -29,7 +27,7 @@ namespace PowerFull.Service.State
                             {
                                 Device = tuple.Item1,
                                 PowerState = tuple.Item2 == PowerState.Unknown
-                                    ? _messagingFacade.GetPowerState(tuple.Item1)
+                                    ? _payload.MessagingFacade.GetPowerState(tuple.Item1)
                                     : Task.FromResult(tuple.Item2)
                             })
                         .ToArray();
@@ -40,7 +38,7 @@ namespace PowerFull.Service.State
                         .Select(tuple => (tuple.Device, tuple.PowerState.Result))
                         .ToArray();
 
-                    observer.OnNext(_transitionFactory.ToRunning(new Payload(payload)));
+                    observer.OnNext(_transitionFactory.ToRunning(new Payload(_payload.MessagingFacade, payload)));
                     observer.OnCompleted();
                 }
             );

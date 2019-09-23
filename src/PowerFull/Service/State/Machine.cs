@@ -36,7 +36,7 @@ namespace PowerFull.Service.State
                 .Merge(
                     transitions.OfType<Transition.ToInitializing>().Select(transition => _factory.Initializing(transition.Payload)),
                     transitions.OfType<Transition.ToRunning>().Select(transition => _factory.Running(transition.Payload)),
-                    transitions.OfType<Transition.ToFaulted>().Select(transition => _factory.Faulted(transition.Exception)),
+                    transitions.OfType<Transition.ToFaulted>().Select(transition => _factory.Faulted(transition.Payload, transition.Exception)),
                     transitions.OfType<Transition.ToStopped>().Select(transition => _factory.Stopped()))
                 .Publish()
                 .RefCount();

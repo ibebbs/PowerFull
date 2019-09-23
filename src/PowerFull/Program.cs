@@ -24,12 +24,12 @@ namespace PowerFull
                 .ConfigureServices(
                     (hostContext, services) =>
                     {
-                        services.AddOptions<Device.Config>().Bind(hostContext.Configuration.GetSection("Device"));
+                        services.AddOptions<Device.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Device"));
                         services.AddSingleton<Device.IFactory, Device.Factory>();
-                        services.AddOptions<Messaging.Config>().Bind(hostContext.Configuration.GetSection("MQTT"));
+                        services.AddOptions<Messaging.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("MQTT"));
                         services.AddSingleton<Messaging.Mqtt.IFactory, Messaging.Mqtt.Factory>();
                         services.AddSingleton<Messaging.Facade.IFactory, Messaging.Facade.Factory>();
-                        services.AddOptions<Service.Config>().Bind(hostContext.Configuration.GetSection("Service"));
+                        services.AddOptions<Service.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Service"));
                         services.AddSingleton<Service.State.IMachine, Service.State.Machine>();
                         services.AddSingleton<Service.State.IFactory, Service.State.Factory>();
                         services.AddSingleton<Service.State.Transition.IFactory, Service.State.Transition.Factory>();
@@ -52,7 +52,12 @@ namespace PowerFull
             catch (ConfigurationValidationException e)
             {
                 Console.WriteLine($"One or more configuration errors occured:{Environment.NewLine}{e.Message}");
-                Console.ReadLine();
+
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    Console.WriteLine("Hit <Enter> to exit.");
+                    Console.ReadLine();
+                }
             }
         }
     }

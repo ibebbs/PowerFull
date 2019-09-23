@@ -15,7 +15,7 @@ namespace PowerFull
 
     public static class OptionsExtensions
     {
-        private static readonly Regex DataAnnotationFailureReason = new Regex(@"DataAnnotation validation failed for members (\w+) with the error '(?<Error>.+)'.");
+        private static readonly Regex DataAnnotationFailureReason = new Regex(@"DataAnnotation validation failed for members: '.+' with the error: '(?<Error>.+)'.");
 
         private static void ThrowOnError(params IFallible[] fallibles)
         {

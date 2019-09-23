@@ -1,9 +1,12 @@
 ﻿using FakeItEasy;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mqtt;
+using System.Reactive;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
@@ -156,6 +159,70 @@ namespace PowerFull.Tests.Messaging.Facade
             var actual = await powerState;
 
             return actual;
+        }
+
+        private static IEnumerable<TestCaseData> PowerReadings
+        {
+            get
+            {
+                yield return new TestCaseData(
+                    @"^(?<RealPower>\d+(\.\d+)?)$",
+                    new[]
+                    {
+                        Recorded.OnNext(TimeSpan.FromSeconds(1), "2100"),
+                        Recorded.OnNext(TimeSpan.FromSeconds(2), "blah"),
+                        Recorded.OnNext(TimeSpan.FromSeconds(3), (string)null),
+                        Recorded.OnNext(TimeSpan.FromSeconds(4), string.Empty),
+                        Recorded.OnNext(TimeSpan.FromSeconds(5), "22.85")
+                    },
+                    new[]
+                    {
+                        Recorded.OnNext(TimeSpan.FromSeconds(1), 2100.0),
+                        Recorded.OnNext(TimeSpan.FromSeconds(5), 22.85)
+                    })
+                    .SetName("Emit Power Readings Matching Simple Regex");
+
+                yield return new TestCaseData(
+                    @"^{.+""RealPower"":{""Total"":(?<RealPower>\d+(\.\d+)).+}",
+                    new[]
+                    {
+                        Recorded.OnNext(TimeSpan.FromSeconds(1), Resources.Json)
+                    },
+                    new[]
+                    {
+                        Recorded.OnNext(TimeSpan.FromSeconds(1), 17.0)
+                    })
+                    .SetName("Emit Power Readings Matching Advanced Regex");
+            }
+        }
+
+        [Test, TestCaseSource(nameof(PowerReadings))]
+        public async Task EmitThePowerReadingWhenAMessageIsReceivedOnThe(
+            string powerReadingPayloadRegex,
+            IEnumerable<Recorded<Notification<string>>> source,
+            IEnumerable<Recorded<Notification<double>>> expected)
+        {
+            const string topic = "powerReadings";
+
+            var scheduler = new TestScheduler();
+
+            var config = new PowerFull.Messaging.Config
+            {
+                PowerReadingTopic = topic,
+                PowerReadingPayloadValueRegex = powerReadingPayloadRegex
+            };
+            
+            (var messages, var mqttClient, var subject) = await CreateSubject(config: config, devices: new[] { DeviceA, DeviceB });
+
+            scheduler.CreateColdObservable(source.ToArray())
+                .Select(payload => new MqttApplicationMessage(topic, payload == null ? null : Encoding.UTF8.GetBytes(payload)))
+                .Subscribe(messages);
+
+            var lastMessage = source.Select(notification => TimeSpan.FromTicks(notification.Time)).Max();
+
+            var actual = scheduler.Start(() => subject.RealPower, lastMessage);
+
+            actual.Messages.AssertEqual(expected);
         }
     }
 }

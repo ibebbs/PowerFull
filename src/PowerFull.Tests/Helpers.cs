@@ -21,7 +21,9 @@ namespace PowerFull.Tests
 
         public static ITestableObserver<T> Start<T>(this TestScheduler scheduler, Func<IObservable<T>> create, TimeSpan disposed)
         {
-            return scheduler.Start(create, disposed.AsTestDisposalTime().Ticks);
+            var disposal = disposed.AsTestDisposalTime().Ticks;
+
+            return scheduler.Start(create, disposal);
         }
     }
 }

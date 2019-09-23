@@ -96,10 +96,13 @@ namespace PowerFull.Messaging.Facade
 
             _subscription = _mqttClient.MessageStream
                 .Where(message => message.Topic.Equals(_config.PowerReadingTopic, StringComparison.OrdinalIgnoreCase))
+                .Where(message => message.Payload?.Length > 0)
                 .Select(message => Encoding.UTF8.GetString(message.Payload))
                 .Select(payload => Regex.Match(payload, _config.PowerReadingPayloadValueRegex))
                 .Where(match => match.Success)
-                .Select(match => double.TryParse(match.Value, out double value) ? (double?)value : null)
+                .SelectMany(match => match.Groups.Cast<Group>())
+                .Where(group => group.Name.Equals(Constants.RealPowerRegexGroupName, StringComparison.OrdinalIgnoreCase))
+                .Select(group => double.TryParse(group.Value, out double value) ? (double?)value : null)
                 .Where(value => value != null)
                 .Select(nullable => nullable.Value)
                 .Subscribe(_realPower);

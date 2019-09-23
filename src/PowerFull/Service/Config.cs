@@ -6,6 +6,6 @@ namespace PowerFull.Service
     public class Config
     {
         [Required]
-        public IEnumerable<string> Devices { get; set; }
+        public string Devices { get; set; }
     }
 }

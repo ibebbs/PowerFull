@@ -21,7 +21,7 @@ namespace PowerFull.Service
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _subscription = _stateMachine.Initialize(_config.Value.Devices);
+            _subscription = _stateMachine.Initialize(_config.Value.Devices.Split(','));
 
             return Task.CompletedTask;
         }

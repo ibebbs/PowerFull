@@ -12,8 +12,8 @@ namespace PowerFull.Device
         private static readonly IEnumerable<Func<Config, (string, string)>> RequiredFields = new Func<Config, (string, string)>[]
         {
             config => (nameof(Config.PowerStateRequestTopic), config.PowerStateRequestTopic),
-            config => (nameof(Config.PowerStateRequestTopic), config.PowerStateResponseTopic),
-            config => (nameof(Config.PowerStateRequestTopic), config.PowerStateResponseOnPayloadRegex),
+            config => (nameof(Config.PowerStateResponseTopic), config.PowerStateResponseTopic),
+            config => (nameof(Config.PowerStateResponseOnPayloadRegex), config.PowerStateResponseOnPayloadRegex),
             config => (nameof(Config.PowerStateResponseOffPayloadRegex), config.PowerStateResponseOffPayloadRegex),
             config => (nameof(Config.PowerOnRequestTopic), config.PowerOnRequestTopic),
             config => (nameof(Config.PowerOffRequestTopic), config.PowerOffRequestTopic)

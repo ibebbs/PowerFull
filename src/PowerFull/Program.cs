@@ -15,7 +15,7 @@ namespace PowerFull
                 .ConfigureAppConfiguration(
                     (hostingContext, config) =>
                     {
-                        config.AddEnvironmentVariables("PowerFull");
+                        config.AddEnvironmentVariables("PowerFull:");
                         if (args != null)
                         {
                             config.AddCommandLine(args);

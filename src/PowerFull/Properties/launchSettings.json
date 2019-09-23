@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "PowerFull": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "PowerFull:Mqtt:Broker": "192.168.1.24",
+        "PowerFull:Service:Devices": "sonoff-battery,",
+        "PowerFull:Mqtt:PowerReadingPayloadValueRegex": "\\d+(\\.\\d+)?",
+        "PowerFull:Device:Theme": "Tasmota",
+        "PowerFull:Mqtt:PowerReadingTopic": "/home/realPower"
+      }
+    }
+  }
+}

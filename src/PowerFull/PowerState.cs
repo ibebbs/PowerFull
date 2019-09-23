@@ -1,6 +1,6 @@
 ﻿namespace PowerFull
 {
-    public enum State
+    public enum PowerState
     {
         Unknown = -1,
         Off = 0,

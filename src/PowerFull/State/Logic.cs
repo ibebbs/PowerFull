@@ -1,25 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Text;
 
-namespace PowerFull
+namespace PowerFull.State
 {
     public class Logic
     {
         private const double TurnOffLimit = -100;
         private const double TurnOnLimit = 300;
 
-        public static IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<IDevice> devicesOn, IEnumerable<IDevice> devicesOff, IScheduler scheduler)
+        public static IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<(IDevice, PowerState)> devices, IScheduler scheduler)
         {
             return Observable.Create<(Event, IDevice)>(
                 observer =>
                 {
-                    var pendingOff = new Stack<IDevice>(devicesOn.Reverse());
-                    var pendingOn = new Stack<IDevice>(devicesOff.Reverse());
+                    var pendingOff = new Stack<IDevice>(devices.Where(tuple => tuple.Item2 == PowerState.On).Select(tuple => tuple.Item1).Reverse());
+                    var pendingOn = new Stack<IDevice>(devices.Where(tuple => tuple.Item2 == PowerState.Off).Select(tuple => tuple.Item1).Reverse());
 
                     var windowAverage = realPower
                         .Buffer(TimeSpan.FromMinutes(10), scheduler)

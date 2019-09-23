@@ -64,7 +64,7 @@ namespace PowerFull.Messaging.Facade
             return client;
         }
 
-        private Task<State> PowerStateRespose(IDevice device)
+        private Task<PowerState> PowerStateRespose(IDevice device)
         {
             var messages = _mqttClient.MessageStream
                 .Where(message => message.Topic.Equals(device.PowerStateResponseTopic))
@@ -74,18 +74,18 @@ namespace PowerFull.Messaging.Facade
 
             var onState = messages
                 .Where(payload => Regex.IsMatch(payload, device.PowerStateResponseOnPayloadRegex))
-                .Select(_ => State.On);
+                .Select(_ => PowerState.On);
 
             var offState = messages
                 .Where(payload => Regex.IsMatch(payload, device.PowerStateResponseOffPayloadRegex))
-                .Select(_ => State.Off);
+                .Select(_ => PowerState.Off);
 
             var unknownState = messages
                 .Timeout(TimeSpan.FromSeconds(10))
                 .IgnoreElements()
                 .Materialize()
                 .Where(notification => notification.Exception != null)
-                .Select(notification => State.Unknown);
+                .Select(notification => PowerState.Unknown);
 
             return Observable.Merge(onState, offState, unknownState).Take(1).ToTask();
         }
@@ -127,7 +127,7 @@ namespace PowerFull.Messaging.Facade
             }
         }
 
-        public async ValueTask<State> GetPowerState(IDevice device)
+        public async Task<PowerState> GetPowerState(IDevice device)
         {
             var response = PowerStateRespose(device);
 
@@ -135,14 +135,41 @@ namespace PowerFull.Messaging.Facade
                 ? null
                 : Encoding.UTF8.GetBytes(device.PowerStateRequestPayload);
 
-            await _mqttClient.PublishAsync(
-                new MqttApplicationMessage(device.PowerStateRequestTopic, payload),
-                MqttQualityOfService.AtLeastOnce
-            );
+            await _mqttClient
+                .PublishAsync(
+                    new MqttApplicationMessage(device.PowerStateRequestTopic, payload),
+                    MqttQualityOfService.AtLeastOnce)
+                .ConfigureAwait(false);
 
-            var state = await response;
+            var state = await response.ConfigureAwait(false);
 
             return state;
+        }
+
+        public async Task PowerOnAsync(IDevice device)
+        {
+            var payload = string.IsNullOrWhiteSpace(device.PowerOnRequestPayload)
+                ? null
+                : Encoding.UTF8.GetBytes(device.PowerOnRequestPayload);
+
+            await _mqttClient
+                .PublishAsync(
+                    new MqttApplicationMessage(device.PowerOnRequestTopic, payload),
+                    MqttQualityOfService.AtLeastOnce)
+                .ConfigureAwait(false);
+        }
+
+        public async Task PowerOffAsync(IDevice device)
+        {
+            var payload = string.IsNullOrWhiteSpace(device.PowerOffRequestPayload)
+                ? null
+                : Encoding.UTF8.GetBytes(device.PowerOffRequestPayload);
+
+            await _mqttClient
+                .PublishAsync(
+                    new MqttApplicationMessage(device.PowerOnRequestTopic, payload),
+                    MqttQualityOfService.AtLeastOnce)
+                .ConfigureAwait(false);
         }
 
         public IObservable<double> RealPower => _realPower;

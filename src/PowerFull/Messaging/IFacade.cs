@@ -5,7 +5,9 @@ namespace PowerFull.Messaging
 {
     public interface IFacade : IAsyncDisposable
     {
-        ValueTask<State> GetPowerState(IDevice device);
+        Task<PowerState> GetPowerState(IDevice device);
+        Task PowerOnAsync(IDevice device);
+        Task PowerOffAsync(IDevice device);
 
         IObservable<double> RealPower { get; }
     }

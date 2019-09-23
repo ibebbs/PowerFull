@@ -108,34 +108,34 @@ namespace PowerFull.Tests.Messaging.Facade
             get
             {
                 yield return new TestCaseData("ON", "OFF", "ON")
-                    .Returns(State.On)
+                    .Returns(PowerState.On)
                     .SetName("Return On For Simple Regex Match");
 
                 yield return new TestCaseData("ON", "OFF", "OFF")
-                    .Returns(State.Off)
+                    .Returns(PowerState.Off)
                     .SetName("Return Off For Simple Regex Match");
 
                 yield return new TestCaseData("ON", "OFF", "{ \"POWER\":\"ON\" }")
-                    .Returns(State.On)
+                    .Returns(PowerState.On)
                     .SetName("Return On For Simple Json Regex Match");
 
                 yield return new TestCaseData("ON", "OFF", "{ \"POWER\":\"OFF\" }")
-                    .Returns(State.Off)
+                    .Returns(PowerState.Off)
                     .SetName("Return Off For Simple Json Regex Match");
 
                 yield return new TestCaseData("^\\{\"POWER\":\"ON\"\\}$", "^\\{\"POWER\":\"OFF\"\\}$", "{\"POWER\":\"ON\"}")
-                    .Returns(State.On)
+                    .Returns(PowerState.On)
                     .SetName("Return On For Advanced Json Regex Match");
 
                 yield return new TestCaseData("^\\{\"POWER\":\"ON\"\\}$", "^\\{\"POWER\":\"OFF\"\\}$", "{\"POWER\":\"OFF\"}")
-                    .Returns(State.Off)
+                    .Returns(PowerState.Off)
                     .SetName("Return Off For Advanced Json Regex Match");
 
             }
         }
 
         [Test, TestCaseSource(nameof(PowerStates))]
-        public async Task<State> ReturnThePowerStateWhenAResponseIsReceived(
+        public async Task<PowerState> ReturnThePowerStateWhenAResponseIsReceived(
             string powerOnPayloadRegex, 
             string powerOffPayloadRegex, 
             string payload)

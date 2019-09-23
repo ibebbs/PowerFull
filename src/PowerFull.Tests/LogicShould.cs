@@ -19,32 +19,28 @@ namespace PowerFull.Tests
             {
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0) },
-                    new[] { DeviceA, DeviceB },
-                    new[] { DeviceC },
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(10),
                     new[] { Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)) }
                     ).SetName("Expected Device To Be Powered On When 10 Minute Window Average Is Greater Than Turn On Limit");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0) },
-                    new[] { DeviceA, DeviceB },
-                    new[] { DeviceC },
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(10),
                     new[] { Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)) }
                     ).SetName("Expected Device To Be Powered Off When 10 Minute Window Average Is Less Than Turn Off Limit");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0) },
-                    new IDevice[0],
-                    new[] { DeviceA, DeviceB, DeviceC },
+                    new[] { (DeviceA, PowerState.On), (DeviceB, PowerState.On), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(10),
                     new Recorded<Notification<(Event, IDevice)>>[0]
                     ).SetName("Nothing When 10 Minute Window Average Is Greater Than Turn On Limit But No Devices Currently Off");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0) },
-                    new[] { DeviceA, DeviceB, DeviceC },
-                    new IDevice[0],
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.Off) },
                     TimeSpan.FromMinutes(10),
                     new Recorded<Notification<(Event, IDevice)>>[0]
                     ).SetName("Nothing When 10 Minute Window Average Is Less Than Turn Off Limit But No Devices Currently On");
@@ -54,8 +50,7 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), -500.0) 
                     },
-                    new[] { DeviceA, DeviceB },
-                    new[] { DeviceC },
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)),
@@ -67,8 +62,7 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), 500.0)
                     },
-                    new[] { DeviceA, DeviceB },
-                    new[] { DeviceC },
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)),
@@ -80,8 +74,7 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), 400.0)
                     },
-                    new[] { DeviceA, DeviceB },
-                    new[] { DeviceC },
+                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)),
@@ -93,22 +86,19 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), -400.0)
                     },
-                    new[] { DeviceA },
-                    new[] { DeviceC, DeviceB },
+                    new[] { (DeviceA, PowerState.Off), (DeviceC, PowerState.On), (DeviceB, PowerState.On) },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)),
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(20), (Event.TurnOff, DeviceB))
-                    }
-                    ).SetName("Devices To Be Powered Off In Correct Order When Subsequent 10 Minute Window Averages Are Less Than The Turn Off Limit");
+                    }).SetName("Devices To Be Powered Off In Correct Order When Subsequent 10 Minute Window Averages Are Less Than The Turn Off Limit");
             }
         }
 
         [TestCaseSource(nameof(TestCases))]
         public void Emit(
             IEnumerable<Recorded<Notification<double>>> powerReadings,
-            IEnumerable<IDevice> devicesCurrentlyPoweredOff,
-            IEnumerable<IDevice> devicesCurrentlyPoweredOn,
+            IEnumerable<(IDevice, PowerState)> devices,
             TimeSpan runForDuration,
             IEnumerable<Recorded<Notification<(Event, IDevice)>>> expected)
         {
@@ -117,7 +107,7 @@ namespace PowerFull.Tests
             var averages = scheduler.CreateHotObservable(powerReadings.ToArray());
             
             var observer = scheduler.Start(
-                () => Logic.GenerateEvents(averages, devicesCurrentlyPoweredOn, devicesCurrentlyPoweredOff, scheduler),
+                () => State.Logic.GenerateEvents(averages, devices, scheduler),
                 runForDuration
             );
 

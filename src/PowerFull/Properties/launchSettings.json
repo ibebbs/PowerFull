@@ -9,6 +9,9 @@
         "PowerFull:Device:Theme": "Tasmota",
         "PowerFull:Mqtt:PowerReadingTopic": "home/solar/meter1readings"
       }
+    },
+    "Docker": {
+      "commandName": "Docker"
     }
   }
 }

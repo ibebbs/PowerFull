@@ -17,12 +17,14 @@ namespace PowerFull.Service.State
         private readonly Device.IFactory _deviceFactory;
         private readonly Messaging.Facade.IFactory _messagingFacadeFactory;
         private readonly Transition.IFactory _transitionFactory;
+        private readonly ILogic _logic;
 
-        public Factory(Device.IFactory deviceFactory, Transition.IFactory transitionFactory, Messaging.Facade.IFactory messagingFacadeFactory)
+        public Factory(Device.IFactory deviceFactory, Transition.IFactory transitionFactory, Messaging.Facade.IFactory messagingFacadeFactory, ILogic logic)
         {
             _deviceFactory = deviceFactory;
             _messagingFacadeFactory = messagingFacadeFactory;
             _transitionFactory = transitionFactory;
+            _logic = logic;
         }
 
         public IState Starting(IEnumerable<string> devices)
@@ -37,7 +39,7 @@ namespace PowerFull.Service.State
 
         public IState Running(IPayload payload)
         {
-            return new Running(_transitionFactory, payload);
+            return new Running(_transitionFactory, _logic, payload);
         }
 
         public IState Faulted(IPayload payload, Exception exception)

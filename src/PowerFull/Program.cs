@@ -32,6 +32,7 @@ namespace PowerFull
                         services.AddOptions<Service.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Service"));
                         services.AddSingleton<Service.State.IMachine, Service.State.Machine>();
                         services.AddSingleton<Service.State.IFactory, Service.State.Factory>();
+                        services.AddSingleton<Service.State.ILogic, Service.State.Logic>();
                         services.AddSingleton<Service.State.Transition.IFactory, Service.State.Transition.Factory>();
                         services.AddSingleton<IHostedService, Service.Implementation>();
                     })

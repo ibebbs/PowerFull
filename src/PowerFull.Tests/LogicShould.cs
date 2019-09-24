@@ -1,3 +1,5 @@
+using FakeItEasy;
+using Microsoft.Extensions.Options;
 using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using System;
@@ -105,9 +107,20 @@ namespace PowerFull.Tests
             TestScheduler scheduler = new TestScheduler();
 
             var averages = scheduler.CreateHotObservable(powerReadings.ToArray());
+
+            var config = new PowerFull.Service.Config
+            {
+                PowerChangeAfterMinutes = 10,
+                ThresholdToTurnOffDeviceWatts = -100,
+                ThresholdToTurnOnDeviceWatts = 300
+            };
+            var options = A.Fake<IOptions<PowerFull.Service.Config>>();
+            A.CallTo(() => options.Value).Returns(config);
+
+            var logic = new PowerFull.Service.State.Logic(options, scheduler);
             
             var observer = scheduler.Start(
-                () => Service.State.Logic.GenerateEvents(averages, devices, scheduler),
+                () => logic.GenerateEvents(averages, devices),
                 runForDuration
             );
 

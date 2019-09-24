@@ -12,11 +12,13 @@ namespace PowerFull.Service.State
     public class Running : IState
     {
         private readonly Transition.IFactory _transitionFactory;
+        private readonly ILogic _logic;
         private readonly IPayload _payload;
 
-        public Running(Transition.IFactory transitionFactory, IPayload payload)
+        public Running(Transition.IFactory transitionFactory, ILogic logic, IPayload payload)
         {
             _transitionFactory = transitionFactory;
+            _logic = logic;
             _payload = payload;
         }
 
@@ -27,7 +29,7 @@ namespace PowerFull.Service.State
                 case Event.TurnOn:
                     return Observable.StartAsync(() => _payload.MessagingFacade.PowerOnAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
                 case Event.TurnOff:
-                    return Observable.StartAsync(() => _payload.MessagingFacade.PowerOffAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.On));
+                    return Observable.StartAsync(() => _payload.MessagingFacade.PowerOffAsync(tuple.Device)).Select(_ => (tuple.Device, PowerState.Off));
                 default:
                     return Observable.Empty<(IDevice, PowerState)>();
             }
@@ -37,7 +39,8 @@ namespace PowerFull.Service.State
         {
             var devices = _payload.Devices
                 .Where(t => t.Item1 != tuple.Device)
-                .Concat(new[] { tuple });
+                .Concat(new[] { tuple })
+                .ToArray();
 
             return new Payload(_payload.MessagingFacade, devices);
         }
@@ -49,8 +52,8 @@ namespace PowerFull.Service.State
 
         public IObservable<ITransition> Enter()
         {
-            return Logic
-                .GenerateEvents(_payload.MessagingFacade.RealPower, _payload.Devices, Scheduler.Default)
+            return _logic
+                .GenerateEvents(_payload.MessagingFacade.RealPower, _payload.Devices)
                 .Select(PerformEvent)
                 .Switch()
                 .Select(Payload)

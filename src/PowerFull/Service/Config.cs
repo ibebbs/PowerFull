@@ -14,7 +14,7 @@ namespace PowerFull.Service
         [Range(minimum: 1.0,  maximum: 4000.0)]
         public int ThresholdToTurnOnDeviceWatts { get; set; } = 100;
 
-        [Range(minimum: -1.0, maximum: -4000.0)]
+        [Range(minimum: -4000.0, maximum: -1.0)]
         public int ThresholdToTurnOffDeviceWatts { get; set; } = -100;
     }
 }

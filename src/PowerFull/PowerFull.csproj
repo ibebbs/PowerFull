@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ReadMe.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Bebbs.Monads" Version="1.0.0.20" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.0.0" />

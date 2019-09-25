@@ -4,6 +4,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
 WORKDIR /src
 COPY ["PowerFull/PowerFull.csproj", "PowerFull/"]
+COPY ["nuget.config", "PowerFull/"]
 RUN dotnet restore "PowerFull/PowerFull.csproj"
 COPY . .
 WORKDIR "/src/PowerFull"

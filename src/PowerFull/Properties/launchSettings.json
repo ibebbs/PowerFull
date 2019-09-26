@@ -3,17 +3,21 @@
     "PowerFull": {
       "commandName": "Project",
       "environmentVariables": {
-        "PowerFull:Mqtt:Broker": "192.168.1.24",
+        "PowerFull:Messaging:PowerReadingTopic": "home/solar/meter1readings",
         "PowerFull:Service:Devices": "sonoff-battery,",
-        "PowerFull:Mqtt:PowerReadingPayloadValueRegex": "^{.+\"RealPower\":{\"Total\":(?<RealPower>-?\\d+(\\.\\d+)).+}$",
+        "PowerFull:Messaging:Broker": "192.168.1.24",
         "PowerFull:Device:Theme": "Tasmota",
-        "PowerFull:Mqtt:PowerReadingTopic": "home/solar/meter1readings"
+        "PowerFull:Messaging:PowerReadingPayloadValueRegex": "^{.+\"RealPower\":{\"Total\":(?<RealPower>-?\\d+(\\.\\d+)).+}$"
       }
     },
     "Docker": {
       "commandName": "Docker",
       "environmentVariables": {
-        "PowerFull:Service:Devices": "sonoff-battery"
+        "PowerFull:Messaging:PowerReadingTopic": "home/solar/meter1readings",
+        "PowerFull:Service:Devices": "sonoff-battery",
+        "PowerFull:Messaging:Broker": "192.168.1.24",
+        "PowerFull:Device:Theme": "Tasmota",
+        "PowerFull:Messaging:PowerReadingPayloadValueRegex": "^{.+\"RealPower\":{\"Total\":(?<RealPower>-?\\d+(\\.\\d+)).+}"
       }
     }
   }

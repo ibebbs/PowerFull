@@ -1,6 +1,6 @@
 ﻿# PowerFull
 
-A .Net Core utility for automatically controlling device power based on messages received from MQTT.
+A open-source .NET Core utility for automatically controlling device power based on messages received from MQTT.
 
 ## Background
 
@@ -136,3 +136,21 @@ The topic on which to publish a message requesting a device to turn on.
 ##### Value: string
 ##### Example: 'Tasmota' Theme Value - `OFF`
 The payload of the message published to the PowerOffRequestTopic used to request that the device turn on.
+
+## Docker
+
+A docker image has been provided on [docker hub](https://hub.docker.com/r/ibebbs/powerfull). It can be run with the following command:
+
+```
+docker run --env-file=[environment_variables_file] ibebbs/powerfull
+```
+
+where `[environment_variables_file]` is a path to a file containing required environment variables as described above. Example defaults are provided in the `env_file_defaults` file which can be used with the following command:
+
+```
+docker run --env-file=./env_file_defaults ibebbs/powerfull
+```
+
+## Feedback
+
+If you encounter any issues using PowerFull or have any feature suggestions, please raise an issue on [Github](https://github.com/ibebbs/PowerFull).

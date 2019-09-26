@@ -110,7 +110,7 @@ namespace PowerFull.Tests
 
             var config = new PowerFull.Service.Config
             {
-                PowerChangeAfterMinutes = 10,
+                AveragePowerReadingAcrossMinutes = 10,
                 ThresholdToTurnOffDeviceWatts = -100,
                 ThresholdToTurnOnDeviceWatts = 300
             };

@@ -7,7 +7,7 @@ namespace PowerFull.Messaging
         [Required]
         public string Broker { get; set; }
 
-        [Required]
+        [Required, Range(minimum: 1024, maximum: 65535)]
         public int Port { get; set; } = 1883;
 
         public string ClientId { get; set; } = "PowerFull";

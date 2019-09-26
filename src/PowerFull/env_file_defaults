@@ -1,0 +1,12 @@
+﻿PowerFull:Device:PowerStateRequestTopic=cmnd/%deviceId%/POWER
+PowerFull:Device:PowerStateResponseTopic=stat/%deviceId%/POWER
+PowerFull:Device:PowerStateResponseOnPayloadRegex=ON
+PowerFull:Device:PowerStateResponseOffPayloadRegex=OFF
+PowerFull:Device:PowerOnRequestTopic=cmnd/%deviceId%/POWER
+PowerFull:Device:PowerOnRequestPayload=ON
+PowerFull:Device:PowerOffRequestTopic=cmnd/%deviceId%/POWER
+PowerFull:Device:PowerOffRequestPayload=OFF
+PowerFull:Messaging:Broker=192.168.1.24
+PowerFull:Messaging:PowerReadingTopic=home/realPower
+PowerFull:Messaging:PowerReadingPayloadValueRegex=^{.+"RealPower":{"Total":(?<RealPower>\d+(\.\d+)).+}
+PowerFull:Service:Devices=sonoff-battery

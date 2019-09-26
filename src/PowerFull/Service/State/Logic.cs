@@ -35,7 +35,7 @@ namespace PowerFull.Service.State
                     var pendingOn = new Stack<IDevice>(devices.Where(tuple => tuple.Item2 == PowerState.Off).Select(tuple => tuple.Item1).Reverse());
 
                     var windowAverage = realPower
-                        .Buffer(TimeSpan.FromMinutes(_config.Value.PowerChangeAfterMinutes), _scheduler)
+                        .Buffer(TimeSpan.FromMinutes(_config.Value.AveragePowerReadingAcrossMinutes), _scheduler)
                         .Select(buffer => buffer.Cast<double?>().Average() ?? 0.0)
                         .Publish()
                         .RefCount();

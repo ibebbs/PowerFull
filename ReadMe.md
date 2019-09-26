@@ -1,6 +1,6 @@
 ﻿# PowerFull
 
-A open-source .NET Core utility for automatically controlling device power based on messages received from MQTT.
+A open-source .NET Core utility for automatically controlling device power based via MQTT.
 
 ## Background
 

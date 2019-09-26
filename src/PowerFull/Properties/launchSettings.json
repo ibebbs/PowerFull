@@ -11,7 +11,10 @@
       }
     },
     "Docker": {
-      "commandName": "Docker"
+      "commandName": "Docker",
+      "environmentVariables": {
+        "PowerFull:Service:Devices": "sonoff-battery"
+      }
     }
   }
 }

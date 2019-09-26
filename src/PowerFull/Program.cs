@@ -26,7 +26,7 @@ namespace PowerFull
                     {
                         services.AddOptions<Device.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Device"));
                         services.AddSingleton<Device.IFactory, Device.Factory>();
-                        services.AddOptions<Messaging.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("MQTT"));
+                        services.AddOptions<Messaging.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Messaging"));
                         services.AddSingleton<Messaging.Mqtt.IFactory, Messaging.Mqtt.Factory>();
                         services.AddSingleton<Messaging.Facade.IFactory, Messaging.Facade.Factory>();
                         services.AddOptions<Service.Config>().ValidateDataAnnotations().Bind(hostContext.Configuration.GetSection("Service"));

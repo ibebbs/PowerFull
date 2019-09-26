@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <Reference Include="System.Net.Mqtt">
-      <HintPath>..\..\lib\System.Net.Mqtt.dll</HintPath>
+      <HintPath>..\lib\System.Net.Mqtt.dll</HintPath>
     </Reference>
   </ItemGroup>
 

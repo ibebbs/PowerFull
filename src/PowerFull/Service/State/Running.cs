@@ -14,12 +14,16 @@ namespace PowerFull.Service.State
         private readonly Transition.IFactory _transitionFactory;
         private readonly ILogic _logic;
         private readonly IPayload _payload;
+        private readonly Config _config;
+        private readonly IScheduler _scheduler;
 
-        public Running(Transition.IFactory transitionFactory, ILogic logic, IPayload payload)
+        public Running(Transition.IFactory transitionFactory, ILogic logic, IPayload payload, Config config, IScheduler scheduler)
         {
             _transitionFactory = transitionFactory;
             _logic = logic;
             _payload = payload;
+            _config = config;
+            _scheduler = scheduler;
         }
 
         public IObservable<(IDevice, PowerState)> PerformEvent((Event Event, IDevice Device) tuple)
@@ -50,7 +54,7 @@ namespace PowerFull.Service.State
             return _transitionFactory.ToRunning(payload);
         }
 
-        public IObservable<ITransition> Enter()
+        private IObservable<ITransition> TransitionsFromRealPowerReadings()
         {
             return _logic
                 .GenerateEvents(_payload.MessagingFacade.RealPower, _payload.Devices)
@@ -59,6 +63,22 @@ namespace PowerFull.Service.State
                 .Select(Payload)
                 .Select(Transition)
                 .Catch<ITransition, Exception>(exception => Observable.Return(_transitionFactory.ToFaulted(_payload, exception)));
+        }
+
+        private IObservable<ITransition> TransitionsFromInactivity()
+        {
+            return Observable
+                .Timer(TimeSpan.FromMinutes(_config.RequestDevicePowerStateAfterMinutes), _scheduler)
+                .Select(_ => new Payload(_payload.MessagingFacade, _payload.Devices.Select(tuple => (tuple.Item1, PowerState.Unknown))))
+                .Select(payload => _transitionFactory.ToInitializing(payload));
+        }
+
+        public IObservable<ITransition> Enter()
+        {
+            return Observable.Merge(
+                TransitionsFromRealPowerReadings(),
+                TransitionsFromInactivity()
+            );
         }
     }
 }

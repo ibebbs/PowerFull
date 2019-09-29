@@ -39,11 +39,15 @@ namespace PowerFull.Service.State
             }
         }
 
-        private IPayload Payload((IDevice Device, PowerState powerState) tuple)
+        private IPayload Payload((IDevice Device, PowerState PowerState) tuple)
         {
+            var newDevices = _payload.Devices
+                .Where(d => d.Device == tuple.Device)
+                .Select(d => new Device.State(d.Device, d.Priority, tuple.PowerState))
+                .ToArray();
+
             var devices = _payload.Devices
-                .Where(t => t.Item1 != tuple.Device)
-                .Concat(new[] { tuple })
+                .GroupJoin(newDevices, d => d.Device, d => d.Device, (d, n) => n.FirstOption().Coalesce(() => d))
                 .ToArray();
 
             return new Payload(_payload.MessagingFacade, devices);
@@ -69,7 +73,7 @@ namespace PowerFull.Service.State
         {
             return Observable
                 .Timer(TimeSpan.FromMinutes(_config.RequestDevicePowerStateAfterMinutes), _scheduler)
-                .Select(_ => new Payload(_payload.MessagingFacade, _payload.Devices.Select(tuple => (tuple.Item1, PowerState.Unknown))))
+                .Select(_ => new Payload(_payload.MessagingFacade, _payload.Devices.Select(d => new Device.State(d.Device, d.Priority, PowerState.Unknown))))
                 .Select(payload => _transitionFactory.ToInitializing(payload));
         }
 

@@ -8,15 +8,15 @@ namespace PowerFull.Service.State
     public interface IPayload : IAsyncDisposable
     {
         Messaging.IFacade MessagingFacade { get; }
-        IEnumerable<(IDevice, PowerState)> Devices { get; }
+        IEnumerable<Device.State> Devices { get; }
     }
 
     public class Payload : IPayload
     {
-        public Payload(Messaging.IFacade messagingFacade, IEnumerable<(IDevice, PowerState)> devices)
+        public Payload(Messaging.IFacade messagingFacade, IEnumerable<Device.State> devices)
         {
             MessagingFacade = messagingFacade;
-            Devices = (devices ?? Enumerable.Empty<(IDevice, PowerState)>()).ToArray();
+            Devices = (devices ?? Enumerable.Empty<Device.State>()).ToArray();
         }
 
         public ValueTask DisposeAsync()
@@ -26,6 +26,6 @@ namespace PowerFull.Service.State
 
         public Messaging.IFacade MessagingFacade { get; }
 
-        public IEnumerable<(IDevice, PowerState)> Devices { get; }
+        public IEnumerable<Device.State> Devices { get; }
     }
 }

@@ -24,7 +24,7 @@ namespace PowerFull.Tests.Service.State
         }
 
         private static ITestableObserver<PowerFull.Service.State.ITransition> RunSubject(
-            IEnumerable<(IDevice, PowerState)> deviceStates,
+            IEnumerable<PowerFull.Device.State> deviceStates,
             TimeSpan runFor,
             PowerFull.Service.Config config = null,
             Func<TestScheduler, ITestableObservable<(Event, IDevice)>> eventFactory = null)
@@ -38,7 +38,7 @@ namespace PowerFull.Tests.Service.State
             A.CallTo(() => transitionFactory.ToInitializing(A<PowerFull.Service.State.IPayload>.Ignored)).Returns(TransitionToInitializing);
             A.CallTo(() => transitionFactory.ToRunning(A<PowerFull.Service.State.IPayload>.Ignored)).Returns(TransitionToRunning);
             var logic = A.Fake<PowerFull.Service.State.ILogic>();
-            A.CallTo(() => logic.GenerateEvents(A<IObservable<double>>.Ignored, A<IEnumerable<(IDevice, PowerState)>>.Ignored))
+            A.CallTo(() => logic.GenerateEvents(A<IObservable<double>>.Ignored, A<IEnumerable<PowerFull.Device.State>>.Ignored))
              .Returns(eventFactory(scheduler));
             var payload = A.Fake<PowerFull.Service.State.IPayload>();
             A.CallTo(() => payload.Devices).Returns(deviceStates);
@@ -50,7 +50,10 @@ namespace PowerFull.Tests.Service.State
         [Test]
         public void EmitATransitionToRunningWhenAPowerEventTakesPlace()
         {
-            var deviceStates = new (IDevice, PowerState)[] { (DeviceA, PowerState.On), (DeviceB, PowerState.On) };
+            var deviceStates = new [] { 
+                new PowerFull.Device.State(DeviceA, 0, PowerState.On), 
+                new PowerFull.Device.State(DeviceB, 1, PowerState.On) 
+            };
 
             var actual = RunSubject(
                 deviceStates,
@@ -67,7 +70,11 @@ namespace PowerFull.Tests.Service.State
         [Test]
         public void EmitATransitionToInitializingWhenAPowerEventHasNotOccuredInTheConfiguredPeriod()
         {
-            var deviceStates = new (IDevice, PowerState)[] { (DeviceA, PowerState.On), (DeviceB, PowerState.On) };
+            var deviceStates = new [] 
+            {
+                new PowerFull.Device.State(DeviceA, 0, PowerState.On),
+                new PowerFull.Device.State(DeviceB, 1, PowerState.On) 
+            };
 
             var actual = RunSubject(
                 deviceStates,

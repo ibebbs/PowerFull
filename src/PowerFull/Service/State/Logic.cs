@@ -25,7 +25,7 @@ namespace PowerFull.Service.State
         }
 
         public Logic(IOptions<Config> config) : this(config, Scheduler.Default) { }
-
+        
         public IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<Device.State> devices)
         {
             return Observable.Create<(Event, IDevice)>(

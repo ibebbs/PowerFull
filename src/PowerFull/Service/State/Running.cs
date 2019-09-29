@@ -69,6 +69,15 @@ namespace PowerFull.Service.State
                 .Catch<ITransition, Exception>(exception => Observable.Return(_transitionFactory.ToFaulted(_payload, exception)));
         }
 
+        private IObservable<ITransition> TransitionsFromUnsolicitedPowerChanges()
+        {
+            return _payload.MessagingFacade
+                .PowerStateChanges(_payload.Devices.Select(d => d.Device))
+                .Select(Payload)
+                .Select(Transition)
+                .Catch<ITransition, Exception>(exception => Observable.Return(_transitionFactory.ToFaulted(_payload, exception)));
+        }
+
         private IObservable<ITransition> TransitionsFromInactivity()
         {
             return Observable
@@ -79,8 +88,9 @@ namespace PowerFull.Service.State
 
         public IObservable<ITransition> Enter()
         {
-            return Observable.Merge(
+            return Observable.Amb(
                 TransitionsFromRealPowerReadings(),
+                TransitionsFromUnsolicitedPowerChanges(),
                 TransitionsFromInactivity()
             );
         }

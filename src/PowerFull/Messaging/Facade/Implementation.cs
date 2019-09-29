@@ -16,6 +16,15 @@ namespace PowerFull.Messaging.Facade
 {
     public class Implementation : IFacade
     {
+        private static (string, string) AsTopicPayload(MqttApplicationMessage message)
+        {
+            var payload = (message.Payload?.Length ?? 0) == 0
+                ? string.Empty
+                : Encoding.UTF8.GetString(message.Payload);
+
+            return (message.Topic, payload);
+        }
+
         private readonly Config _config;
         private readonly Mqtt.IFactory _mqttFactory;
         private readonly IReadOnlyDictionary<string, IDevice> _devices;
@@ -23,6 +32,7 @@ namespace PowerFull.Messaging.Facade
         private readonly Subject<double> _realPower;
 
         private IMqttClient _mqttClient;
+        private IObservable<(string, string)> _messagePayloads;
         private IDisposable _subscription;
 
         public Implementation(Config config, Mqtt.IFactory mqttFactory, IEnumerable<IDevice> devices, ILogger<IFacade> logger)
@@ -67,42 +77,46 @@ namespace PowerFull.Messaging.Facade
             return client;
         }
 
-        private Task<PowerState> PowerStateRespose(IDevice device)
+        private IObservable<PowerState> PowerStatesFor(IDevice device)
         {
-            var messages = _mqttClient.MessageStream
-                .Where(message => message.Topic.Equals(device.PowerStateResponseTopic))
-                .Select(message => Encoding.UTF8.GetString(message.Payload))
-                .Publish()
-                .RefCount();
-
-            var onState = messages
-                .Where(payload => Regex.IsMatch(payload, device.PowerStateResponseOnPayloadRegex))
+            var onState = _messagePayloads
+                .Where(((string Topic, string Payload) message) => message.Topic == device.PowerStateResponseTopic)
+                .Where(((string Topic, string Payload) message) => Regex.IsMatch(message.Payload, device.PowerStateResponseOnPayloadRegex))
                 .Select(_ => PowerState.On);
 
-            var offState = messages
-                .Where(payload => Regex.IsMatch(payload, device.PowerStateResponseOffPayloadRegex))
+            var offState = _messagePayloads
+                .Where(((string Topic, string Payload) message) => message.Topic == device.PowerStateResponseTopic)
+                .Where(((string Topic, string Payload) message) => Regex.IsMatch(message.Payload, device.PowerStateResponseOffPayloadRegex))
                 .Select(_ => PowerState.Off);
 
-            var unknownState = messages
+            return Observable.Merge(onState, offState);
+        }
+
+        private Task<PowerState> PowerStateRespose(IDevice device)
+        {
+            var unknownState = _messagePayloads
+                .Where(((string Topic, string Payload) message) => message.Topic == device.PowerStateResponseTopic)
                 .Timeout(TimeSpan.FromSeconds(10))
                 .IgnoreElements()
                 .Materialize()
                 .Where(notification => notification.Exception != null)
                 .Select(notification => PowerState.Unknown);
 
-            return Observable.Merge(onState, offState, unknownState).Take(1).ToTask();
+            return Observable.Merge(PowerStatesFor(device), unknownState).Take(1).ToTask();
         }
 
         public async ValueTask InitializeAsync()
         {
             _mqttClient = await CreateMqttClient();
 
-            _subscription = _mqttClient.MessageStream
-                .Where(message => message.Topic.Equals(_config.PowerReadingTopic, StringComparison.OrdinalIgnoreCase))
-                .Do(message => _logger.LogDebug($"Received power reading on topic '{_config.PowerReadingTopic}'"))
-                .Where(message => message.Payload?.Length > 0)
-                .Select(message => Encoding.UTF8.GetString(message.Payload))
-                .Select(payload => Regex.Match(payload, _config.PowerReadingPayloadValueRegex))
+            _messagePayloads = _mqttClient.MessageStream
+                .Select(AsTopicPayload)
+                .Publish()
+                .RefCount();
+
+            _subscription = _messagePayloads
+                .Where(((string Topic, string Payload) message) => message.Topic.Equals(_config.PowerReadingTopic, StringComparison.OrdinalIgnoreCase))
+                .Select(((string Topic, string Payload) message) => Regex.Match(message.Payload, _config.PowerReadingPayloadValueRegex))
                 .Do(match => _logger.LogDebug($"{(match.Success ? "Successfully extracted" : "Failed to extract")} power value from message"))
                 .Where(match => match.Success)
                 .SelectMany(match => match.Groups.Cast<Group>())
@@ -187,6 +201,13 @@ namespace PowerFull.Messaging.Facade
                     new MqttApplicationMessage(device.PowerOffRequestTopic, payload),
                     MqttQualityOfService.AtLeastOnce)
                 .ConfigureAwait(false);
+        }
+
+        public IObservable<(IDevice, PowerState)> PowerStateChanges(IEnumerable<IDevice> devices)
+        {
+            return Observable.Merge(
+                devices.Select(device => PowerStatesFor(device).Select(powerState => (device, powerState)))
+            );
         }
 
         public IObservable<double> RealPower => _realPower;

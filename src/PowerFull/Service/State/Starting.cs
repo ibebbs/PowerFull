@@ -32,7 +32,7 @@ namespace PowerFull.Service.State
                     var messagingFacade = await _messagingFacadeFactory.ForDevices(devices);
 
                     var deviceState = devices
-                        .Select(device => (device, PowerState.Unknown))
+                        .Select((device, index) => new Device.State(device, index, PowerState.Unknown))
                         .ToArray();
 
                     var payload = new Payload(messagingFacade, deviceState);

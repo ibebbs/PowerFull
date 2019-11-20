@@ -23,19 +23,20 @@ namespace PowerFull.Service.State
                 {
                     var deviceStates = _payload.Devices
                         .Select(
-                            tuple => new
+                            deviceState => new
                             {
-                                Device = tuple.Item1,
-                                PowerState = tuple.Item2 == PowerState.Unknown
-                                    ? _payload.MessagingFacade.GetPowerState(tuple.Item1)
-                                    : Task.FromResult(tuple.Item2)
+                                deviceState.Device,
+                                deviceState.Priority,
+                                PowerState = deviceState.PowerState == PowerState.Unknown
+                                    ? _payload.MessagingFacade.GetPowerState(deviceState.Device)
+                                    : Task.FromResult(deviceState.PowerState)
                             })
                         .ToArray();
 
                     await Task.WhenAll(deviceStates.Select(tuple => tuple.PowerState));
 
                     var payload = deviceStates
-                        .Select(tuple => (tuple.Device, tuple.PowerState.Result))
+                        .Select(tuple => new Device.State(tuple.Device, tuple.Priority, tuple.PowerState.Result))
                         .ToArray();
 
                     observer.OnNext(_transitionFactory.ToRunning(new Payload(_payload.MessagingFacade, payload)));

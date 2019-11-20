@@ -21,28 +21,48 @@ namespace PowerFull.Tests
             {
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0) },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off), 
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off), 
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(10),
                     new[] { Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)) }
                     ).SetName("Expected Device To Be Powered On When 10 Minute Window Average Is Greater Than Turn On Limit");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0) },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(10),
                     new[] { Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)) }
                     ).SetName("Expected Device To Be Powered Off When 10 Minute Window Average Is Less Than Turn Off Limit");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0) },
-                    new[] { (DeviceA, PowerState.On), (DeviceB, PowerState.On), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.On),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.On),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(10),
                     new Recorded<Notification<(Event, IDevice)>>[0]
                     ).SetName("Nothing When 10 Minute Window Average Is Greater Than Turn On Limit But No Devices Currently Off");
 
                 yield return new TestCaseData(
                     new[] { Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0) },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.Off) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.Off) 
+                    },
                     TimeSpan.FromMinutes(10),
                     new Recorded<Notification<(Event, IDevice)>>[0]
                     ).SetName("Nothing When 10 Minute Window Average Is Less Than Turn Off Limit But No Devices Currently On");
@@ -52,7 +72,12 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), -500.0) 
                     },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)),
@@ -64,7 +89,12 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), 500.0)
                     },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)),
@@ -76,7 +106,12 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), 500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), 400.0)
                     },
-                    new[] { (DeviceA, PowerState.Off), (DeviceB, PowerState.Off), (DeviceC, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceB, 1, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOn, DeviceA)),
@@ -88,7 +123,12 @@ namespace PowerFull.Tests
                         Recorded.OnNext(TimeSpan.FromMinutes(5), -500.0),
                         Recorded.OnNext(TimeSpan.FromMinutes(15), -400.0)
                     },
-                    new[] { (DeviceA, PowerState.Off), (DeviceC, PowerState.On), (DeviceB, PowerState.On) },
+                    new[] 
+                    {
+                        new PowerFull.Device.State(DeviceA, 0, PowerState.Off),
+                        new PowerFull.Device.State(DeviceC, 1, PowerState.On),
+                        new PowerFull.Device.State(DeviceB, 2, PowerState.On) 
+                    },
                     TimeSpan.FromMinutes(20),
                     new[] {
                         Recorded.ExpectedOnNext(TimeSpan.FromMinutes(10), (Event.TurnOff, DeviceC)),
@@ -100,7 +140,7 @@ namespace PowerFull.Tests
         [TestCaseSource(nameof(TestCases))]
         public void Emit(
             IEnumerable<Recorded<Notification<double>>> powerReadings,
-            IEnumerable<(IDevice, PowerState)> devices,
+            IEnumerable<PowerFull.Device.State> devices,
             TimeSpan runForDuration,
             IEnumerable<Recorded<Notification<(Event, IDevice)>>> expected)
         {

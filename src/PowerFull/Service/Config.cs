@@ -11,6 +11,10 @@ namespace PowerFull.Service
         [Range(minimum: 1.0, maximum: 3600.0)]
         public int AveragePowerReadingAcrossMinutes { get; set; } = 10;
 
+
+        [Range(minimum: 1.0, maximum: 3600.0)]
+        public int RequestDevicePowerStateAfterMinutes { get; set; } = 60;
+
         [Range(minimum: 1.0,  maximum: 100000.0)]
         public double ThresholdToTurnOnDeviceWatts { get; set; } = 100;
 

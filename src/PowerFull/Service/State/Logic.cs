@@ -10,7 +10,7 @@ namespace PowerFull.Service.State
 {
     public interface ILogic
     {
-        IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<(IDevice, PowerState)> devices);
+        IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<Device.State> devices);
     }
 
     public class Logic : ILogic
@@ -25,14 +25,20 @@ namespace PowerFull.Service.State
         }
 
         public Logic(IOptions<Config> config) : this(config, Scheduler.Default) { }
-
-        public IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<(IDevice, PowerState)> devices)
+        
+        public IObservable<(Event, IDevice)> GenerateEvents(IObservable<double> realPower, IEnumerable<Device.State> devices)
         {
             return Observable.Create<(Event, IDevice)>(
                 observer =>
                 {
-                    var pendingOff = new Stack<IDevice>(devices.Where(tuple => tuple.Item2 == PowerState.On).Select(tuple => tuple.Item1).Reverse());
-                    var pendingOn = new Stack<IDevice>(devices.Where(tuple => tuple.Item2 == PowerState.Off).Select(tuple => tuple.Item1).Reverse());
+                    var pendingOff = new Stack<IDevice>(devices
+                        .Where(d => d.PowerState == PowerState.On)
+                        .OrderByDescending(d => d.Priority)
+                        .Select(d => d.Device));
+                    var pendingOn = new Stack<IDevice>(devices
+                        .Where(d => d.PowerState == PowerState.Off)
+                        .OrderByDescending(d => d.Priority)
+                        .Select(d => d.Device));
 
                     var windowAverage = realPower
                         .Buffer(TimeSpan.FromMinutes(_config.Value.AveragePowerReadingAcrossMinutes), _scheduler)

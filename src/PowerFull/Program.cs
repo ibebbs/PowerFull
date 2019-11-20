@@ -11,7 +11,7 @@ namespace PowerFull
     {
         private static async Task Main(string[] args)
         {
-            var builder = new HostBuilder()
+            var builder = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(
                     (hostingContext, config) =>
                     {
